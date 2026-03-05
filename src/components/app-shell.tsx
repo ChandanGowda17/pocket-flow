@@ -8,7 +8,6 @@ import {
   LayoutDashboard,
   LogOut,
   PieChart,
-  Settings,
   Target,
   Wallet,
 } from 'lucide-react';
@@ -27,7 +26,6 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import { SettingsDialog } from '@/components/settings-dialog';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
@@ -37,7 +35,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const userAvatar = PlaceHolderImages.find(
     (img) => img.id === 'user-avatar-1'
   );
-  const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
 
   const getInitials = (name?: string | null) => {
     if (!name) return 'U';
@@ -127,15 +124,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                     ? 'Anonymous User'
                     : user?.displayName || 'User'}
                 </span>
-                <span className="text-xs text-muted-foreground">
-                  {user?.email}
-                </span>
               </div>
             </div>
             <div className="flex items-center gap-1">
-              <Button variant="ghost" size="icon" onClick={() => setIsSettingsOpen(true)} aria-label="Open settings">
-                  <Settings />
-              </Button>
               <Button variant="ghost" size="icon" onClick={() => auth.signOut()} aria-label="Log out">
                   <LogOut />
               </Button>
@@ -146,7 +137,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <SidebarInset>
         {children}
       </SidebarInset>
-      <SettingsDialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
     </SidebarProvider>
   );
 }
