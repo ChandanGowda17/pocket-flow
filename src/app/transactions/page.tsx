@@ -2,13 +2,35 @@
 
 import * as React from "react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { mockTransactions } from "@/lib/data";
+import { collection, query, orderBy } from "firebase/firestore";
+import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import RecentTransactions from "@/components/dashboard/recent-transactions";
 import AuthGate from "@/components/auth-gate";
 import AppShell from "@/components/app-shell";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 function Transactions() {
+  const { user } = useUser();
+  const firestore = useFirestore();
+
+  const transactionsCollectionRef = useMemoFirebase(
+    () => (user ? collection(firestore, "users", user.uid, "transactions") : null),
+    [firestore, user]
+  );
+  const transactionsQuery = useMemoFirebase(
+    () => (transactionsCollectionRef ? query(transactionsCollectionRef, orderBy("date", "desc")) : null),
+    [transactionsCollectionRef]
+  );
+  const { data: rawTransactions, isLoading } = useCollection<any>(transactionsQuery);
+
+  const transactions = React.useMemo(() => {
+    if (!rawTransactions) return [];
+    return rawTransactions.map((t: any) => ({
+      ...t,
+      date: t.date?.toDate ? t.date.toDate() : new Date(t.date),
+    }));
+  }, [rawTransactions]);
+
   return (
     <AppShell>
       <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6 sticky top-0 z-10">
@@ -19,7 +41,11 @@ function Transactions() {
         <ThemeToggle />
       </header>
       <main className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-          <RecentTransactions transactions={mockTransactions} />
+          {isLoading ? (
+            <div className="text-center text-muted-foreground">Loading transactions...</div>
+          ) : (
+            <RecentTransactions transactions={transactions} />
+          )}
       </main>
     </AppShell>
   );

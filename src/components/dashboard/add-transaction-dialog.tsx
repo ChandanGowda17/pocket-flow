@@ -45,7 +45,7 @@ import {
 
 import { useDebounce } from "@/hooks/use-debounce";
 import { aiCategorizeTransaction } from "@/ai/flows/ai-categorize-transaction";
-import { categories as defaultCategories, Transaction } from "@/lib/data";
+import { categories, Transaction } from "@/lib/data";
 
 const formSchema = z.object({
   description: z.string().min(2, "Description must be at least 2 characters."),
@@ -121,7 +121,7 @@ export default function AddTransactionDialog({
   }, [debouncedDescription, form, pastTransactionsForAI]);
 
   const allCategories = React.useMemo(() => {
-    const combined = new Set(defaultCategories);
+    const combined = new Set(categories);
     if(suggestedCategory) combined.add(suggestedCategory);
     return Array.from(combined);
   }, [suggestedCategory]);

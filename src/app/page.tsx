@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import type { Transaction, Budget } from "@/lib/data";
-import { mockTransactions, mockBudgets } from "@/lib/data";
+import { collection, serverTimestamp, query, orderBy } from "firebase/firestore";
+import { useUser, useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking } from "@/firebase";
 
 import DashboardHeader from "@/components/dashboard/header";
 import FinancialOverview from "@/components/dashboard/overview";
@@ -13,16 +14,61 @@ import AuthGate from "@/components/auth-gate";
 import AppShell from "@/components/app-shell";
 
 function Dashboard() {
-  const [transactions, setTransactions] =
-    React.useState<Transaction[]>(mockTransactions);
-  const [budgets] = React.useState<Budget[]>(mockBudgets);
+  const { user } = useUser();
+  const firestore = useFirestore();
+
+  const transactionsCollectionRef = useMemoFirebase(
+    () => (user ? collection(firestore, "users", user.uid, "transactions") : null),
+    [firestore, user]
+  );
+  
+  const transactionsQuery = useMemoFirebase(
+    () => (transactionsCollectionRef ? query(transactionsCollectionRef, orderBy("date", "desc")) : null),
+    [transactionsCollectionRef]
+  );
+
+  const { data: rawTransactions, isLoading: transactionsLoading } = useCollection<any>(transactionsQuery);
+
+  const budgetsQuery = useMemoFirebase(
+    () => (user ? collection(firestore, "users", user.uid, "budgets") : null),
+    [firestore, user]
+  );
+  const { data: budgets, isLoading: budgetsLoading } = useCollection<Budget>(budgetsQuery);
+
+  const transactions: Transaction[] = React.useMemo(() => {
+    if (!rawTransactions) return [];
+    return rawTransactions.map((t: any) => ({
+      ...t,
+      date: t.date?.toDate ? t.date.toDate() : new Date(t.date),
+    }));
+  }, [rawTransactions]);
 
   const handleAddTransaction = React.useCallback((newTransaction: Omit<Transaction, 'id'>) => {
-    setTransactions((prev) => [
-      { ...newTransaction, id: `tx_${Date.now()}` },
-      ...prev,
-    ]);
-  }, []);
+    if (!user || !transactionsCollectionRef) return;
+
+    const transactionData = {
+      ...newTransaction,
+      userId: user.uid,
+      date: newTransaction.date,
+      isRecurrent: false, // Default value
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    };
+    addDocumentNonBlocking(transactionsCollectionRef, transactionData);
+  }, [user, transactionsCollectionRef]);
+
+  if (transactionsLoading || budgetsLoading) {
+    return (
+      <AppShell>
+        <DashboardHeader onAddTransaction={handleAddTransaction} transactions={[]} />
+        <main className="flex flex-1 items-center justify-center">
+          <div className="text-center text-muted-foreground">
+            <p>Loading your financial data...</p>
+          </div>
+        </main>
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell>
@@ -36,7 +82,7 @@ function Dashboard() {
             <SpendingChart transactions={transactions} />
           </div>
           <div className="col-span-12 lg:col-span-3">
-            <BudgetProgress budgets={budgets} transactions={transactions} />
+            <BudgetProgress budgets={budgets || []} transactions={transactions} />
           </div>
         </div>
           <div className="grid gap-4">
