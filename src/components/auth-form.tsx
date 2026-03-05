@@ -22,7 +22,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { useAuth, initiateEmailSignIn, initiateEmailSignUp, initiateAnonymousSignIn } from '@/firebase';
+import { useAuth, useFirestore, initiateEmailSignIn, initiateEmailSignUp, initiateAnonymousSignIn } from '@/firebase';
 import { Loader2 } from 'lucide-react';
 
 const formSchema = z.object({
@@ -35,6 +35,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 export default function AuthForm() {
   const auth = useAuth();
+  const firestore = useFirestore();
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<FormValues>({
@@ -57,14 +58,14 @@ export default function AuthForm() {
         setIsLoading(false);
         return;
       }
-      initiateEmailSignUp(auth, email, password, displayName);
+      initiateEmailSignUp(firestore, auth, email, password, displayName);
     }
     // We don't need to setIsLoading(false) because the AuthGate will redirect on success.
   };
 
   const handleAnonymousSignIn = () => {
     setIsLoading(true);
-    initiateAnonymousSignIn(auth);
+    initiateAnonymousSignIn(firestore, auth);
   };
 
   return (
