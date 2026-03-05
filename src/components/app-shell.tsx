@@ -26,14 +26,6 @@ import {
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { SettingsDialog } from '@/components/settings-dialog';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
@@ -140,25 +132,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 </span>
               </div>
             </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="icon" onClick={() => setIsSettingsOpen(true)} aria-label="Open settings">
                   <Settings />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent side="top" align="end">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => setIsSettingsOpen(true)}>
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>Settings</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => auth.signOut()}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Log out</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+              </Button>
+              <Button variant="ghost" size="icon" onClick={() => auth.signOut()} aria-label="Log out">
+                  <LogOut />
+              </Button>
+            </div>
           </div>
         </SidebarFooter>
       </Sidebar>

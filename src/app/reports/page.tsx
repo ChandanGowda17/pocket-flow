@@ -7,6 +7,7 @@ import SpendingChart from "@/components/dashboard/spending-chart";
 import FinancialOverview from "@/components/dashboard/overview";
 import AuthGate from "@/components/auth-gate";
 import AppShell from "@/components/app-shell";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 function Reports() {
   return (
@@ -16,6 +17,7 @@ function Reports() {
         <div className="flex-1">
           <h1 className="font-semibold text-lg">Reports</h1>
         </div>
+        <ThemeToggle />
       </header>
       <main className="flex-1 space-y-4 p-4 md:p-8 pt-6">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

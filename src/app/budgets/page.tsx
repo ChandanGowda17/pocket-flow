@@ -6,6 +6,7 @@ import { mockBudgets, mockTransactions } from "@/lib/data";
 import BudgetProgress from "@/components/dashboard/budget-progress";
 import AuthGate from "@/components/auth-gate";
 import AppShell from "@/components/app-shell";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 function Budgets() {
   return (
@@ -15,6 +16,7 @@ function Budgets() {
         <div className="flex-1">
           <h1 className="font-semibold text-lg">Budgets</h1>
         </div>
+        <ThemeToggle />
       </header>
       <main className="flex-1 space-y-4 p-4 md:p-8 pt-6">
           <BudgetProgress budgets={mockBudgets} transactions={mockTransactions} />

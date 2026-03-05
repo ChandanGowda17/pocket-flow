@@ -3,6 +3,7 @@
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import AddTransactionDialog from "./add-transaction-dialog";
 import type { Transaction } from "@/lib/data";
+import { ThemeToggle } from "../theme-toggle";
 
 interface DashboardHeaderProps {
   onAddTransaction: (transaction: Omit<Transaction, 'id'>) => void;
@@ -16,8 +17,9 @@ export default function DashboardHeader({ onAddTransaction, transactions }: Dash
       <div className="flex-1">
         <h1 className="font-semibold text-lg">Dashboard</h1>
       </div>
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2">
         <AddTransactionDialog onAddTransaction={onAddTransaction} transactions={transactions} />
+        <ThemeToggle />
       </div>
     </header>
   );

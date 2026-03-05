@@ -6,6 +6,7 @@ import { mockTransactions } from "@/lib/data";
 import RecentTransactions from "@/components/dashboard/recent-transactions";
 import AuthGate from "@/components/auth-gate";
 import AppShell from "@/components/app-shell";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 function Transactions() {
   return (
@@ -15,6 +16,7 @@ function Transactions() {
         <div className="flex-1">
           <h1 className="font-semibold text-lg">Transactions</h1>
         </div>
+        <ThemeToggle />
       </header>
       <main className="flex-1 space-y-4 p-4 md:p-8 pt-6">
           <RecentTransactions transactions={mockTransactions} />
