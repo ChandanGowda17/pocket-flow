@@ -50,22 +50,24 @@ export default function AuthForm() {
   const handleAuthAction = (action: 'signIn' | 'signUp') => {
     setIsLoading(true);
     const { email, password, displayName } = form.getValues();
+    const onError = () => setIsLoading(false);
+
     if (action === 'signIn') {
-      initiateEmailSignIn(auth, email, password);
+      initiateEmailSignIn(auth, email, password, onError);
     } else { // signUp
       if (!displayName || displayName.length < 2) {
         form.setError('displayName', { type: 'manual', message: 'Name must be at least 2 characters.' });
         setIsLoading(false);
         return;
       }
-      initiateEmailSignUp(firestore, auth, email, password, displayName);
+      initiateEmailSignUp(firestore, auth, email, password, displayName, onError);
     }
-    // We don't need to setIsLoading(false) because the AuthGate will redirect on success.
+    // On success, AuthGate will redirect, so we don't need to set loading to false here.
   };
 
   const handleAnonymousSignIn = () => {
     setIsLoading(true);
-    initiateAnonymousSignIn(firestore, auth);
+    initiateAnonymousSignIn(firestore, auth, () => setIsLoading(false));
   };
 
   return (
