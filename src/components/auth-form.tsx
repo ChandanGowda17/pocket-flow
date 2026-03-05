@@ -26,6 +26,7 @@ import { useAuth, initiateEmailSignIn, initiateEmailSignUp, initiateAnonymousSig
 import { Loader2 } from 'lucide-react';
 
 const formSchema = z.object({
+  displayName: z.string().optional(),
   email: z.string().email({ message: 'Invalid email address.' }),
   password: z.string().min(6, { message: 'Password must be at least 6 characters.' }),
 });
@@ -41,16 +42,22 @@ export default function AuthForm() {
     defaultValues: {
       email: '',
       password: '',
+      displayName: '',
     },
   });
 
   const handleAuthAction = (action: 'signIn' | 'signUp') => {
     setIsLoading(true);
-    const { email, password } = form.getValues();
+    const { email, password, displayName } = form.getValues();
     if (action === 'signIn') {
       initiateEmailSignIn(auth, email, password);
-    } else {
-      initiateEmailSignUp(auth, email, password);
+    } else { // signUp
+      if (!displayName || displayName.length < 2) {
+        form.setError('displayName', { type: 'manual', message: 'Name must be at least 2 characters.' });
+        setIsLoading(false);
+        return;
+      }
+      initiateEmailSignUp(auth, email, password, displayName);
     }
     // We don't need to setIsLoading(false) because the AuthGate will redirect on success.
   };
@@ -65,12 +72,25 @@ export default function AuthForm() {
       <CardHeader>
         <CardTitle className="text-2xl">Login or Sign Up</CardTitle>
         <CardDescription>
-          Enter your email below to login or create an account.
+          Enter your details below to login or create an account.
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4">
         <Form {...form}>
           <form className="space-y-4">
+            <FormField
+              control={form.control}
+              name="displayName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Display Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="John Doe (for sign up)" {...field} value={field.value ?? ''}/>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="email"
