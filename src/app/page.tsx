@@ -33,6 +33,7 @@ import FinancialOverview from "@/components/dashboard/overview";
 import BudgetProgress from "@/components/dashboard/budget-progress";
 import RecentTransactions from "@/components/dashboard/recent-transactions";
 import SpendingChart from "@/components/dashboard/spending-chart";
+import { SettingsDialog } from "@/components/settings-dialog";
 
 export default function DashboardPage() {
   const [transactions, setTransactions] =
@@ -41,6 +42,7 @@ export default function DashboardPage() {
   const userAvatar = PlaceHolderImages.find(
     (img) => img.id === "user-avatar-1"
   );
+  const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
 
   const handleAddTransaction = React.useCallback((newTransaction: Omit<Transaction, 'id'>) => {
     setTransactions((prev) => [
@@ -88,7 +90,7 @@ export default function DashboardPage() {
           <Separator />
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton tooltip="Settings">
+              <SidebarMenuButton tooltip="Settings" onClick={() => setIsSettingsOpen(true)}>
                 <Settings />
                 Settings
               </SidebarMenuButton>
@@ -134,6 +136,7 @@ export default function DashboardPage() {
           </div>
         </main>
       </SidebarInset>
+      <SettingsDialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
     </SidebarProvider>
   );
 }
