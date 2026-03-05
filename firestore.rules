@@ -1,0 +1,176 @@
+/**
+ * Core Philosophy: This ruleset enforces a strict user-ownership model. All user data is private
+ * and can only be accessed by the authenticated user who owns it. This ensures a high level of
+ * privacy and security for personal financial information.
+ *
+ * Data Structure: The data is organized hierarchically. A top-level 'users' collection serves
+ * as the entry point, where each document ID is a user's Firebase Authentication UID. All
+ * related data, such as categories, transactions, budgets, and spending goals, are stored in
+ * subcollections under that user's specific document.
+ *
+ * Key Security Decisions:
+ * - User Isolation: Users can only read and write data within their own document tree
+ *   (e.g., /users/{their-own-uid}/...). Cross-user access is strictly prohibited.
+ * - No Public Data: There are no globally readable collections. All access requires authentication.
+ * - User Discovery Disabled: Listing documents in the top-level '/users' collection is disallowed
+ *   to prevent attackers from scraping a list of all application users.
+ *
+ * Denormalization for Authorization: To ensure fast and secure authorization, every document within
+ * a user's subcollection (e.g., a transaction) contains a denormalized 'userId' field. This field
+ * must match the user's UID in the document path, allowing rules to validate ownership without
+ * performing costly lookups on parent documents.
+ *
+ * Structural Segregation: All user data is naturally segregated by the /users/{userId} path. This
+ * design makes it simple and efficient to write list queries (e.g., fetching all transactions for
+ * a user), as the security rules can grant access based on the path alone.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // -------------------------------------------------------------------------
+    // Helper Functions
+    // -------------------------------------------------------------------------
+
+    /**
+     * Checks if a user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Checks if the currently authenticated user's UID matches the given userId.
+     * This is the primary function for verifying document ownership.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * Verifies ownership for an existing document. Used for update and delete
+     * operations to ensure the document exists before the operation is attempted.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+
+    /**
+     * Validates the integrity of a new UserProfile document upon creation.
+     * Ensures the internal 'id' and 'firebaseUid' fields correctly link to the
+     * user's authentication UID, which is also the document's ID.
+     */
+    function isCreatingOwnProfile(userId) {
+      return isOwner(userId)
+          && request.resource.data.id == userId
+          && request.resource.data.firebaseUid == userId;
+    }
+
+    /**
+     * Enforces immutability of core identification fields on a UserProfile update.
+     * Prevents the ownership link ('id' and 'firebaseUid') from being changed
+     * after the document has been created.
+     */
+    function isUpdatingOwnProfile() {
+      return request.resource.data.id == resource.data.id
+          && request.resource.data.firebaseUid == resource.data.firebaseUid;
+    }
+
+    /**
+     * Validates a new document in a user-owned subcollection (e.g., Category, Transaction).
+     * Ensures the document contains a 'userId' field that matches the owner's UID
+     * in the path, establishing the ownership link.
+     */
+    function isCreatingOwnSubcollectionDoc(userId) {
+      return isOwner(userId) && request.resource.data.userId == userId;
+    }
+
+    /**
+     * Enforces the immutability of the 'userId' field on subcollection documents.
+     * This prevents a document from being reassigned to a different user.
+     */
+    function isUpdatingOwnSubcollectionDoc() {
+      return request.resource.data.userId == resource.data.userId;
+    }
+
+
+    // -------------------------------------------------------------------------
+    // Collection Rules
+    // -------------------------------------------------------------------------
+
+    /**
+     * @description Controls access to a user's own profile document.
+     * @path /users/{userId}
+     * @allow (create) An authenticated user can create their own profile document.
+     * @deny (create) An authenticated user cannot create a profile for another user's UID.
+     * @principle Restricts access to a user's own data tree and validates self-creation.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isCreatingOwnProfile(userId);
+      allow update: if isExistingOwner(userId) && isUpdatingOwnProfile();
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Secures a user's private collection of financial categories.
+     * @path /users/{userId}/categories/{categoryId}
+     * @allow (create) User 'abc' can create a new category in '/users/abc/categories/'.
+     * @deny (get) User 'xyz' cannot read a category from '/users/abc/categories/{categoryId}'.
+     * @principle Enforces document ownership for all operations and validates relational integrity.
+     */
+    match /users/{userId}/categories/{categoryId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isCreatingOwnSubcollectionDoc(userId);
+      allow update: if isExistingOwner(userId) && isUpdatingOwnSubcollectionDoc();
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Secures a user's private collection of financial transactions.
+     * @path /users/{userId}/transactions/{transactionId}
+     * @allow (list) User 'abc' can list all transactions in '/users/abc/transactions/'.
+     * @deny (update) User 'xyz' cannot update a transaction in '/users/abc/transactions/{transactionId}'.
+     * @principle Enforces document ownership for all operations and validates relational integrity.
+     */
+    match /users/{userId}/transactions/{transactionId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isCreatingOwnSubcollectionDoc(userId);
+      allow update: if isExistingOwner(userId) && isUpdatingOwnSubcollectionDoc();
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Secures a user's private collection of monthly budgets.
+     * @path /users/{userId}/budgets/{budgetId}
+     * @allow (delete) User 'abc' can delete a budget from '/users/abc/budgets/{budgetId}'.
+     * @deny (create) User 'xyz' cannot create a new budget in '/users/abc/budgets/'.
+     * @principle Enforces document ownership for all operations and validates relational integrity.
+     */
+    match /users/{userId}/budgets/{budgetId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isCreatingOwnSubcollectionDoc(userId);
+      allow update: if isExistingOwner(userId) && isUpdatingOwnSubcollectionDoc();
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Secures a user's private collection of financial spending goals.
+     * @path /users/{userId}/spendingGoals/{spendingGoalId}
+     * @allow (get) User 'abc' can read a spending goal from '/users/abc/spendingGoals/{spendingGoalId}'.
+     * @deny (list) User 'xyz' cannot list spending goals from '/users/abc/spendingGoals/'.
+     * @principle Enforces document ownership for all operations and validates relational integrity.
+     */
+    match /users/{userId}/spendingGoals/{spendingGoalId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isCreatingOwnSubcollectionDoc(userId);
+      allow update: if isExistingOwner(userId) && isUpdatingOwnSubcollectionDoc();
+      allow delete: if isExistingOwner(userId);
+    }
+  }
+}
