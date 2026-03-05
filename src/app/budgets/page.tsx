@@ -1,9 +1,6 @@
 "use client";
 
 import * as React from "react";
-import Image from "next/image";
-import Link from "next/link";
-import { usePathname } from 'next/navigation';
 import {
   ArrowLeftRight,
   LayoutDashboard,
@@ -12,47 +9,22 @@ import {
   Target,
   Wallet,
 } from "lucide-react";
-
-import { PlaceHolderImages } from "@/lib/placeholder-images";
-import type { Transaction, Budget } from "@/lib/data";
-import { mockTransactions, mockBudgets, mockUser } from "@/lib/data";
-import {
-  Sidebar,
-  SidebarProvider,
-  SidebarInset,
-  SidebarHeader,
-  SidebarContent,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarFooter,
-} from "@/components/ui/sidebar";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { Sidebar, SidebarProvider, SidebarInset, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
-
-import DashboardHeader from "@/components/dashboard/header";
-import FinancialOverview from "@/components/dashboard/overview";
-import BudgetProgress from "@/components/dashboard/budget-progress";
-import RecentTransactions from "@/components/dashboard/recent-transactions";
-import SpendingChart from "@/components/dashboard/spending-chart";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { PlaceHolderImages } from "@/lib/placeholder-images";
+import { mockUser, mockBudgets, mockTransactions } from "@/lib/data";
 import { SettingsDialog } from "@/components/settings-dialog";
+import BudgetProgress from "@/components/dashboard/budget-progress";
 
-export default function DashboardPage() {
+export default function BudgetsPage() {
   const pathname = usePathname();
-  const [transactions, setTransactions] =
-    React.useState<Transaction[]>(mockTransactions);
-  const [budgets] = React.useState<Budget[]>(mockBudgets);
   const userAvatar = PlaceHolderImages.find(
     (img) => img.id === "user-avatar-1"
   );
   const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
-
-  const handleAddTransaction = React.useCallback((newTransaction: Omit<Transaction, 'id'>) => {
-    setTransactions((prev) => [
-      { ...newTransaction, id: `tx_${Date.now()}` },
-      ...prev,
-    ]);
-  }, []);
 
   return (
     <SidebarProvider>
@@ -80,7 +52,7 @@ export default function DashboardPage() {
               </Link>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <Link href="/transactions">
+               <Link href="/transactions">
                 <SidebarMenuButton tooltip="Transactions" isActive={pathname === '/transactions'}>
                   <ArrowLeftRight />
                   Transactions
@@ -88,7 +60,7 @@ export default function DashboardPage() {
               </Link>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <Link href="/reports">
+               <Link href="/reports">
                 <SidebarMenuButton tooltip="Reports" isActive={pathname === '/reports'}>
                   <PieChart />
                   Reports
@@ -129,22 +101,14 @@ export default function DashboardPage() {
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <DashboardHeader onAddTransaction={handleAddTransaction} transactions={transactions} />
+        <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6 sticky top-0 z-10">
+          <SidebarTrigger className="md:hidden" />
+          <div className="flex-1">
+            <h1 className="font-semibold text-lg">Budgets</h1>
+          </div>
+        </header>
         <main className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <FinancialOverview transactions={transactions} />
-          </div>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-            <div className="col-span-12 lg:col-span-4">
-              <SpendingChart transactions={transactions} />
-            </div>
-            <div className="col-span-12 lg:col-span-3">
-              <BudgetProgress budgets={budgets} transactions={transactions} />
-            </div>
-          </div>
-           <div className="grid gap-4">
-              <RecentTransactions transactions={transactions} limit={7} />
-          </div>
+            <BudgetProgress budgets={mockBudgets} transactions={mockTransactions} />
         </main>
       </SidebarInset>
       <SettingsDialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />

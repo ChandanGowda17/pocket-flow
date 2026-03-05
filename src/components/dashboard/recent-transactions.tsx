@@ -27,19 +27,23 @@ import { format } from "date-fns";
 
 interface RecentTransactionsProps {
   transactions: Transaction[];
+  limit?: number;
 }
 
 export default function RecentTransactions({
   transactions,
+  limit,
 }: RecentTransactionsProps) {
-  const recentTransactions = transactions.slice(0, 7);
+  const transactionsToShow = limit ? transactions.slice(0, limit) : transactions;
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Recent Transactions</CardTitle>
+        <CardTitle>{limit ? 'Recent Transactions' : 'All Transactions'}</CardTitle>
         <CardDescription>
-          Here's a list of your most recent expenses and income.
+          {limit
+            ? "Here's a list of your most recent expenses and income."
+            : "A complete list of your expenses and income."}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -53,7 +57,7 @@ export default function RecentTransactions({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {recentTransactions.map((transaction) => (
+            {transactionsToShow.map((transaction) => (
               <TableRow key={transaction.id}>
                 <TableCell>
                   <div className="flex items-center gap-3">
